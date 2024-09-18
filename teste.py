@@ -2,84 +2,144 @@ import cv2
 import numpy as np
 import os
 
-# Carregar o modelo de detecção de rostos e o arquivo de configuração
-modelFile = "./Modelo/res10_300x300_ssd_iter_140000.caffemodel"
-configFile = "./Conf/deploy.prototxt"
-net = cv2.dnn.readNetFromCaffe(configFile, modelFile)
+# ========== 2S Broker ========== 
+class Broker:
+    @staticmethod
+    def log_event(event_message):
+        """Loga um evento local."""
+        print(f"Evento: {event_message}")
+    
+    @staticmethod
+    def execute_command(command):
+        """Executa um comando (por exemplo, notificar usuário)."""
+        print(f"Comando executado: {command}")
 
-# Carregar o modelo de reconhecimento facial OpenFace
-openface_model = cv2.dnn.readNetFromTorch('./openface/nn4.small2.v1.t7')
+# ========== User-Centric 2S Middleware ========== 
+class Middleware:
+    def __init__(self, threshold=0.7):
+        self.threshold = threshold
 
-# Função para extrair o embedding facial usando OpenFace
-def get_face_embedding(face_image):
-    face_blob = cv2.dnn.blobFromImage(face_image, 1.0/255, (96, 96), (0, 0, 0), swapRB=True, crop=False)
-    openface_model.setInput(face_blob)
-    return openface_model.forward()
+    def compare_embeddings(self, reference_embedding, face_embedding):
+        """Compara embeddings usando distância euclidiana."""
+        distance = np.linalg.norm(reference_embedding - face_embedding)
+        return distance < self.threshold, distance
 
-# Função para calcular a distância euclidiana
-def euclidean_distance(embedding1, embedding2):
-    return np.linalg.norm(embedding1 - embedding2)
+# ========== Model Processing ========== 
+class ModelProcessing:
+    def __init__(self, face_detection_model, openface_model_path):
+        # Carregar o modelo de detecção de rostos
+        self.face_net = cv2.dnn.readNetFromCaffe(*face_detection_model)
+        # Carregar o modelo de reconhecimento facial OpenFace
+        self.openface_model = cv2.dnn.readNetFromTorch(openface_model_path)
 
-# Carregar a imagem
-image = cv2.imread("./Imagem/1.png")
-(h, w) = image.shape[:2]
+    def detect_faces(self, image):
+        """Detecta rostos em uma imagem."""
+        (h, w) = image.shape[:2]
+        blob = cv2.dnn.blobFromImage(image, 1.0, (300, 300), (104.0, 177.0, 123.0))
+        self.face_net.setInput(blob)
+        detections = self.face_net.forward()
+        faces = []
+        for i in range(detections.shape[2]):
+            confidence = detections[0, 0, i, 2]
+            if confidence > 0.5:
+                box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
+                (startX, startY, endX, endY) = box.astype("int")
+                face = image[startY:endY, startX:endX]
+                faces.append(face)
+        return faces
 
-# Pré-processar a imagem para detecção de rostos
-blob = cv2.dnn.blobFromImage(image, 1.0, (300, 300), (104.0, 177.0, 123.0))
+    def get_face_embedding(self, face_image):
+        """Extrai o embedding facial usando OpenFace."""
+        face_blob = cv2.dnn.blobFromImage(face_image, 1.0/255, (96, 96), (0, 0, 0), swapRB=True, crop=False)
+        self.openface_model.setInput(face_blob)
+        return self.openface_model.forward()
 
-# Passar a imagem pela rede para detectar rostos
-net.setInput(blob)
-detections = net.forward()
+# ========== User-2S Interface ========== 
+class User2SInterface:
+    def __init__(self, model_processing, middleware, broker, reference_dir, save_dir):
+        self.model_processing = model_processing
+        self.middleware = middleware
+        self.broker = broker
+        self.reference_dir = reference_dir
+        self.save_dir = save_dir
 
-# Criar um diretório para salvar as imagens dos rostos detectados
-output_dir = "rostos_detectados"
-os.makedirs(output_dir, exist_ok=True)
+    def load_reference_images(self):
+        """Carrega as imagens de referência e seus embeddings."""
+        reference_images = {}
+        for ref_image_name in os.listdir(self.reference_dir):
+            ref_image_path = os.path.join(self.reference_dir, ref_image_name)
+            if os.path.isfile(ref_image_path):
+                reference_image = cv2.imread(ref_image_path)
+                reference_face = cv2.resize(reference_image, (96, 96))
+                reference_embedding = self.model_processing.get_face_embedding(reference_face)
+                reference_images[ref_image_name] = reference_embedding
+        return reference_images
 
-# Carregar a imagem de referência e extrair seu embedding
-reference_image = cv2.imread('./rostos_conhecidos/face_4.jpg')
-reference_face = cv2.resize(reference_image, (96, 96))
-reference_embedding = get_face_embedding(reference_face)
+    def save_detected_face(self, face, face_id):
+        """Salva o rosto detectado em um arquivo de imagem."""
+        if not os.path.exists(self.save_dir):
+            os.makedirs(self.save_dir)
+        face_path = os.path.join(self.save_dir, f"face_{face_id}.png")
+        cv2.imwrite(face_path, face)
+        self.broker.log_event(f"Rosto {face_id} salvo em {face_path}.")
 
-# Variável para indicar se o rosto foi encontrado
-encontrou_match = False
-
-# Iterar sobre as detecções de rostos
-for i in range(0, detections.shape[2]):
-    confidence = detections[0, 0, i, 2]
-
-    # Filtrar as detecções com base na confiança
-    if confidence > 0.5:
-        box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
-        (startX, startY, endX, endY) = box.astype("int")
-
-        # Desenhar a caixa delimitadora ao redor do rosto
-        cv2.rectangle(image, (startX, startY), (endX, endY), (0, 255, 0), 2)
-
-        # Extrair o rosto detectado
-        face = image[startY:endY, startX:endX]
-        face_resized = cv2.resize(face, (96, 96))  # Redimensionar para 96x96, como exigido pelo OpenFace
+    def process_user_image(self, user_image_path):
+        """Processa a imagem do usuário e compara com as referências."""
+        # Carregar a imagem do usuário
+        image = cv2.imread(user_image_path)
         
-        # Obter o embedding do rosto detectado
-        face_embedding = get_face_embedding(face_resized)
-
-        # Calcular a distância euclidiana em relação ao embedding de referência
-        distance = euclidean_distance(reference_embedding, face_embedding)
+        # Detectar rostos
+        faces = self.model_processing.detect_faces(image)
         
-        # Definir um limiar para considerar como um match (ajustar conforme necessário)
-        threshold = 0.6
+        if not faces:
+            self.broker.log_event("Nenhum rosto detectado.")
+            return
 
-        # Verificar se o rosto detectado corresponde à imagem de referência
-        if distance < threshold:
-            encontrou_match = True
-            print(f"Rosto {i} corresponde à imagem de referência com distância {distance:.4f}")
+        # Carregar imagens de referência
+        reference_images = self.load_reference_images()
 
-        # Salvar a imagem do rosto
-        face_filename = os.path.join(output_dir, f"face_{i}.jpg")
-        cv2.imwrite(face_filename, face)
+        encontrou_match = False
 
+        # Processar cada rosto detectado
+        for i, face in enumerate(faces):
+            face_resized = cv2.resize(face, (96, 96))
+            face_embedding = self.model_processing.get_face_embedding(face_resized)
 
-# Verificar se algum match foi encontrado
-if encontrou_match:
-    print("O rosto conhecido está presente na imagem de referência.")
-else:
-    print("O rosto conhecido não está presente na imagem de referência.")
+            # Comparar com cada referência
+            for ref_name, ref_embedding in reference_images.items():
+                match, distance = self.middleware.compare_embeddings(ref_embedding, face_embedding)
+                if match:
+                    encontrou_match = True
+                    self.broker.execute_command(f"Rosto {i} corresponde à referência '{ref_name}' com distância {distance:.4f}")
+
+            # Salvar o rosto detectado
+            self.save_detected_face(face, i)
+
+        # Verificar se algum rosto foi reconhecido
+        if encontrou_match:
+            self.broker.log_event("Um ou mais rostos conhecidos foram encontrados.")
+        else:
+            self.broker.log_event("Nenhum rosto conhecido foi encontrado.")
+
+# ========== Execução Principal ========== 
+if __name__ == "__main__":
+    # Caminhos dos modelos
+    modelFile = "./Modelo/res10_300x300_ssd_iter_140000.caffemodel"
+    configFile = "./Conf/deploy.prototxt"
+    openface_model_path = './openface/nn4.small2.v1.t7'
+    
+    # Inicializar componentes
+    model_processing = ModelProcessing((configFile, modelFile), openface_model_path)
+    middleware = Middleware(threshold=0.6)
+    broker = Broker()
+    
+    # Diretório de imagens de referência e de salvamento
+    reference_dir = './rostos_conhecidos/'
+    save_dir = './rostos_detectados/'
+    
+    # Interface do usuário
+    user_interface = User2SInterface(model_processing, middleware, broker, reference_dir, save_dir)
+    
+    # Processar a imagem do usuário
+    user_image_path = "./Imagem/1.png"
+    user_interface.process_user_image(user_image_path)
