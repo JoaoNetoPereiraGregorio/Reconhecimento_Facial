@@ -1,8 +1,8 @@
 import os
-from model_processing import ModelProcessing
-from middleware import Middleware
-from broker import Broker
-from user_interface import User2SInterface
+from src.services.model_processing import ModelProcessing
+from src.model.middleware import Middleware
+from src.model.broker import Broker
+from src.controller.user_interface import User2SInterface
 
 # Caminhos dos modelos
 modelFile = "./Modelo/res10_300x300_ssd_iter_140000.caffemodel"

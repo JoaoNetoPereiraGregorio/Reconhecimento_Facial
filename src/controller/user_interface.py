@@ -1,8 +1,8 @@
 import os
 import cv2
-from broker import Broker
-from middleware import Middleware
-from model_processing import ModelProcessing
+from src.model.broker import Broker
+from src.model.middleware import Middleware
+from src.services.model_processing import ModelProcessing
 
 class User2SInterface:
     def __init__(self, model_processing, middleware, broker, reference_dir, save_dir):
