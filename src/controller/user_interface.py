@@ -19,7 +19,11 @@ class User2SInterface:
             ref_image_path = os.path.join(self.reference_dir, ref_image_name)
             if os.path.isfile(ref_image_path):
                 reference_image = cv2.imread(ref_image_path)
-                reference_face = cv2.resize(reference_image, (96, 96))
+                faces = self.model_processing.detect_faces(reference_image)
+                if len(faces) > 0:
+                    reference_face = cv2.resize(faces[0], (96, 96))
+                    reference_embedding = self.model_processing.get_face_embedding(reference_face)
+                    reference_images[ref_image_name] = reference_embedding
                 reference_embedding = self.model_processing.get_face_embedding(reference_face)
                 reference_images[ref_image_name] = reference_embedding
         return reference_images
@@ -63,6 +67,8 @@ class User2SInterface:
 
             # Salvar o rosto detectado
             self.save_detected_face(face, i)
+            print(f"Comparando com {ref_name} | Distância: {distance}")
+
 
         # Verificar se algum rosto foi reconhecido
         if encontrou_match:

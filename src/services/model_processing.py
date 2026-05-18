@@ -20,11 +20,21 @@ class ModelProcessing:
             if confidence > 0.5:
                 box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
                 (startX, startY, endX, endY) = box.astype("int")
+                
+                startX, startY = max(0, startX), max(0, startY)
+                endX, endY = min(w, endX), min(h, endY)
                 face = image[startY:endY, startX:endX]
+
                 faces.append(face)
         return faces
 
     def get_face_embedding(self, face_image):
+        face_image = cv2.resize(face_image, (96, 96))
+        
+        face_image = cv2.cvtColor(face_image, cv2.COLOR_BGR2GRAY)
+        face_image = cv2.equalizeHist(face_image)
+        face_image = cv2.cvtColor(face_image, cv2.COLOR_GRAY2BGR)
+
         """Extrai o embedding facial usando OpenFace."""
         face_blob = cv2.dnn.blobFromImage(face_image, 1.0/255, (96, 96), (0, 0, 0), swapRB=True, crop=False)
         self.openface_model.setInput(face_blob)

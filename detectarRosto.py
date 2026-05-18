@@ -6,6 +6,7 @@ import os
 modelFile = "./Modelo/res10_300x300_ssd_iter_140000.caffemodel"
 configFile = "./Conf/deploy.prototxt"
 net = cv2.dnn.readNetFromCaffe(configFile, modelFile)
+valido = False
 
 # Carregar o modelo de reconhecimento facial OpenFace
 openface_model = cv2.dnn.readNetFromTorch('./openface/nn4.small2.v1.t7')
@@ -88,6 +89,7 @@ for i in range(0, detections.shape[2]):
 # Verificar se algum match foi encontrado
 if encontrou_match:
     print("Um ou mais rostos conhecidos estão presentes na imagem.")
+    valido= True
 else:
     print("Nenhum rosto conhecido foi encontrado na imagem.")
 

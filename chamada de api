@@ -1,0 +1,10 @@
+import requests
+
+resp = requests.post(
+    "http://localhost:5000/recognize",
+    files={"image": open("foto_usuario.jpg", "rb")}
+)
+data = resp.json()
+if data["recognized"]:
+    # carrega o documento do usuário identificado
+    user_name = data["matches"][0]["reference"]

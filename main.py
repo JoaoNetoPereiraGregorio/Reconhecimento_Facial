@@ -11,7 +11,7 @@ openface_model_path = './openface/nn4.small2.v1.t7'
 
 # Inicializar componentes
 model_processing = ModelProcessing((configFile, modelFile), openface_model_path)
-middleware = Middleware(threshold=0.6)
+middleware = Middleware(threshold=0.8)
 broker = Broker()
 
 # Diretório de imagens de referência e de salvamento
@@ -22,5 +22,16 @@ save_dir = './rostos_detectados/'
 user_interface = User2SInterface(model_processing, middleware, broker, reference_dir, save_dir)
 
 # Processar a imagem do usuário
-user_image_path = "./Imagem/1.png"
-user_interface.process_user_image(user_image_path)
+
+image_dir = "./Imagem/"
+
+# pegar primeira imagem da pasta
+images = [f for f in os.listdir(image_dir) if f.lower().endswith((".jpg", ".jpeg", ".png"))]
+
+if len(images) == 0:
+    print("Nenhuma imagem encontrada na pasta Imagem.")
+else:
+    user_image_path = os.path.join(image_dir, images[0])
+    print(f"Processando imagem: {user_image_path}")
+    user_interface.process_user_image(user_image_path)
+
