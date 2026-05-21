@@ -6,6 +6,7 @@ Output: { "recognized": true/false, "details": [...] }
 """
 
 import os
+import time
 import cv2
 import numpy as np
 from flask import Flask, request, jsonify
@@ -14,6 +15,7 @@ from flask import Flask, request, jsonify
 # Reutiliza as camadas que você já possui
 # ---------------------------------------------------------------------------
 from src.services.model_processing import ModelProcessing
+from src.services.upload_service import save_upload_file
 from src.model.middleware import Middleware
 from src.model.broker import Broker
 from src.controller.user_interface import User2SInterface
@@ -46,13 +48,14 @@ reference_images = user_interface.load_reference_images()
 # ---------------------------------------------------------------------------
 app = Flask(__name__)
 
-
+# ---------------------------------------------------------------------------
 @app.route("/health", methods=["GET"])
 def health():
     """Endpoint de saúde — útil para orquestadores como K8s/Docker Compose."""
+    broker.log_event(f"[{request.remote_addr}] GET /health")
     return jsonify({"status": "ok", "references_loaded": len(reference_images)}), 200
-
-
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 @app.route("/recognize", methods=["POST"])
 def recognize():
     """
@@ -78,20 +81,32 @@ def recognize():
 
     file = request.files["image"]
     if file.filename == "":
-        return jsonify({"error": "Nenhum arquivo enviado."}), 400
+        broker.log_event(f"[{request.remote_addr}] POST /recognize - request vazio recebido (arquivo sem nome???)")
+        return jsonify({"error": "Houve um erro com o arquivo enviado (arquivo sem nome???)."}), 400
 
-    # Decodifica o arquivo em memória (sem salvar no disco)
+    broker.log_event(f"[{request.remote_addr}] POST /recognize - arquivo recebido: {file.filename}")
+
+    # Salva o arquivo recebido do /post
+    # Comente essa parte p n manter histórico dos uploads.
+    upload_path, upload_filename, renamed = save_upload_file(file)
+    if renamed:
+        broker.log_event(f"[{request.remote_addr}] UPLOAD COM NOME JÁ EXISTENTE, atribuido novo nome: {upload_filename}")
+    broker.log_event(f"[{request.remote_addr}] Upload salvo em: {upload_path}")
+    file.stream.seek(0)  # Retorna o ponteiro do arquivo ao início para leitura em memória
+
+    # Decodifica o arquivo em memória
     file_bytes  = np.frombuffer(file.read(), np.uint8)
     image       = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
 
     if image is None:
+        broker.log_event(f"[{request.remote_addr}] POST /recognize - falha ao decodificar imagem {file.filename}")
         return jsonify({"error": "Não foi possível decodificar a imagem."}), 422
 
     # Detecta rostos na imagem recebida
     faces = model_processing.detect_faces(image)
 
     if not faces:
-        broker.log_event("Reconhecimento: nenhum rosto detectado na imagem enviada.")
+        broker.log_event(f"[{request.remote_addr}] POST /recognize - nenhum rosto detectado no upload {file.filename}")
         return jsonify({"recognized": False, "matches": []}), 200
 
     matches     = []
@@ -113,12 +128,17 @@ def recognize():
                     "distance":   round(float(distance), 4),
                 })
                 broker.log_event(
-                    f"Match: face {i} → '{ref_name}' (dist={distance:.4f})"
+                    f"[{request.remote_addr}] POST /recognize - match face {i} -> ref={ref_name} user_id={user_id} dist={distance:.4f}"
                 )
 
+    if recognized:
+        broker.log_event(f"[{request.remote_addr}] POST /recognize - reconhecimento concluído: {len(matches)} match(es) em {len(faces)} rosto(s)")
+    else:
+        broker.log_event(f"[{request.remote_addr}] POST /recognize - nenhum rosto conhecido encontrado entre {len(faces)} rosto(s) detectado(s)")
+
     return jsonify({"recognized": recognized, "matches": matches}), 200
-
-
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 @app.route("/reload-references", methods=["POST"])
 def reload_references():
     """
@@ -126,6 +146,7 @@ def reload_references():
     Útil quando novos rostos são adicionados à pasta de referências.
     """
     global reference_images
+    broker.log_event(f"[{request.remote_addr}] POST /reload-references - recarregando {len(reference_images)} referências")
     reference_images = user_interface.load_reference_images()
     broker.log_event(f"Referências recarregadas: {len(reference_images)} imagens.")
     return jsonify({"reloaded": len(reference_images)}), 200

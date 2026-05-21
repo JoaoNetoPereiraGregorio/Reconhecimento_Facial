@@ -1,0 +1,3 @@
+# Ignora o diretório de uploads desconhecidos, para não poluir o repositório.
+uploads/
+__pycache__/
