@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>docface</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;500;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:        #0c0c0e;
+    --surface:   #131316;
+    --border:    #242428;
+    --border-hi: #3a3a42;
+    --text:      #e8e8f0;
+    --muted:     #606070;
+    --accent:    #c8f060;
+    --accent-dim:#8aaa30;
+    --red:       #ff5555;
+    --amber:     #ffbb44;
+    --radius:    6px;
+    --mono:      'DM Mono', monospace;
+    --sans:      'Syne', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.6;
+    overflow: hidden;
+  }
+
+  /* ── Layout ─────────────────────────────── */
+  .shell {
+    display: grid;
+    grid-template-rows: 48px 1fr;
+    grid-template-columns: 260px 1fr;
+    height: 100vh;
+  }
+
+  /* ── Topbar ─────────────────────────────── */
+  .topbar {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .logo {
+    font-family: var(--sans);
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.04em;
+    color: var(--accent);
+    user-select: none;
+  }
+  .logo span { color: var(--muted); font-weight: 400; }
+  .topbar-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .save-status {
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color .3s;
+  }
+  .save-status.saving { color: var(--amber); }
+  .save-status.saved  { color: var(--accent); }
+  .save-status.error  { color: var(--red); }
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  /* ── Sidebar ─────────────────────────────── */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .section-label {
+    padding: 14px 16px 8px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* Camera box */
+  .cam-wrap {
+    position: relative;
+    margin: 0 16px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: #000;
+    aspect-ratio: 4/3;
+    border: 1px solid var(--border);
+  }
+  #video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transform: scaleX(-1); /* espelho */
+  }
+  #canvas { display: none; }
+
+  /* Scanning overlay */
+  .scan-line {
+    position: absolute;
+    left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s;
+  }
+  .scanning .scan-line {
+    opacity: 1;
+    animation: scan 1.6s ease-in-out infinite;
+  }
+  @keyframes scan {
+    0%   { top: 0%; }
+    50%  { top: calc(100% - 2px); }
+    100% { top: 0%; }
+  }
+
+  /* Corner decorations */
+  .cam-corner {
+    position: absolute;
+    width: 14px; height: 14px;
+    border-color: var(--accent);
+    border-style: solid;
+    pointer-events: none;
+    opacity: .6;
+  }
+  .cam-corner.tl { top: 6px;  left: 6px;  border-width: 2px 0 0 2px; }
+  .cam-corner.tr { top: 6px;  right: 6px; border-width: 2px 2px 0 0; }
+  .cam-corner.bl { bottom: 6px; left: 6px;  border-width: 0 0 2px 2px; }
+  .cam-corner.br { bottom: 6px; right: 6px; border-width: 0 2px 2px 0; }
+
+  /* Cam status badge */
+  .cam-badge {
+    position: absolute;
+    bottom: 8px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: rgba(0,0,0,.7);
+    border: 1px solid var(--border-hi);
+    color: var(--muted);
+    white-space: nowrap;
+    transition: all .3s;
+  }
+  .cam-badge.active { color: var(--accent); border-color: var(--accent-dim); }
+  .cam-badge.match  { color: #0c0c0e; background: var(--accent); border-color: var(--accent); }
+
+  /* Identity card */
+  .id-card {
+    margin: 12px 16px 0;
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: border-color .3s;
+  }
+  .id-card.identified { border-color: var(--accent-dim); }
+  .id-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--muted);
+    flex-shrink: 0;
+    text-transform: uppercase;
+    transition: background .3s, color .3s;
+  }
+  .id-card.identified .id-avatar {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .id-info { flex: 1; overflow: hidden; }
+  .id-name {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color .3s;
+  }
+  .id-card.identified .id-name { color: var(--text); }
+  .id-sub {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: .04em;
+  }
+
+  /* Log */
+  .log-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .log-area::-webkit-scrollbar { width: 4px; }
+  .log-area::-webkit-scrollbar-track { background: transparent; }
+  .log-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .log-entry {
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    gap: 8px;
+    animation: fadeIn .2s ease;
+  }
+  .log-entry.ok    { color: var(--accent); }
+  .log-entry.warn  { color: var(--amber); }
+  .log-entry.err   { color: var(--red); }
+  .log-time { flex-shrink: 0; opacity: .5; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } }
+
+  /* ── Editor ─────────────────────────────── */
+  .editor-pane {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .editor-header {
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+  }
+  .doc-title {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    flex: 1;
+  }
+  .doc-title.loaded { color: var(--text); }
+  .char-count {
+    font-size: 11px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Locked overlay */
+  .locked-overlay {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    opacity: 1;
+    transition: opacity .4s;
+    pointer-events: none;
+  }
+  .locked-overlay.hidden { opacity: 0; }
+  .lock-icon {
+    font-size: 40px;
+    filter: grayscale(1);
+    opacity: .2;
+    animation: pulse 3s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:.2} 50%{opacity:.35} }
+  .lock-msg {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: .04em;
+  }
+
+  #editor {
+    flex: 1;
+    width: 100%;
+    resize: none;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 15px;
+    line-height: 1.75;
+    padding: 28px 60px 28px 48px;
+    caret-color: var(--accent);
+    display: none; /* shown after recognition */
+  }
+  #editor::placeholder { color: var(--muted); opacity: .4; }
+  #editor::-webkit-scrollbar { width: 6px; }
+  #editor::-webkit-scrollbar-track { background: transparent; }
+  #editor::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Noise grain overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    pointer-events: none;
+    z-index: 999;
+    opacity: .5;
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ── Topbar ── -->
+  <header class="topbar">
+    <div class="logo">doc<span>face</span></div>
+    <div class="topbar-right">
+      <div class="save-status" id="saveStatus">
+        <div class="dot"></div>
+        <span id="saveMsg">aguardando reconhecimento</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="section-label">câmera</div>
+
+    <div class="cam-wrap" id="camWrap">
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="canvas"></canvas>
+      <div class="scan-line" id="scanLine"></div>
+      <div class="cam-corner tl"></div>
+      <div class="cam-corner tr"></div>
+      <div class="cam-corner bl"></div>
+      <div class="cam-corner br"></div>
+      <div class="cam-badge" id="camBadge">iniciando…</div>
+    </div>
+
+    <div class="id-card" id="idCard">
+      <div class="id-avatar" id="idAvatar">?</div>
+      <div class="id-info">
+        <div class="id-name" id="idName">nenhum usuário</div>
+        <div class="id-sub" id="idSub">aponte para a câmera</div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:12px">log</div>
+    <div class="log-area" id="logArea"></div>
+  </aside>
+
+  <!-- ── Editor ── -->
+  <main class="editor-pane">
+    <div class="editor-header">
+      <div class="doc-title" id="docTitle">— sem documento —</div>
+      <div class="char-count" id="charCount"></div>
+    </div>
+
+    <div class="locked-overlay" id="lockedOverlay">
+      <div class="lock-icon">⬡</div>
+      <div class="lock-msg">reconhecimento facial necessário<br>para abrir o documento</div>
+    </div>
+
+    <textarea id="editor" placeholder="comece a digitar…" spellcheck="false"></textarea>
+  </main>
+
+</div>
+
+<script>
+// ── Config ────────────────────────────────────────────
+//const FACE_URL     = '/face/recognize'          // via nginx
+//const DOCS_URL     = '/docs' 
+const FACE_URL     = 'http://localhost:5000/recognize'          // via nginx
+const DOCS_URL     = 'http://localhost:3001'                     // via nginx
+const SCAN_EVERY   = 2000                        // ms
+const DEBOUNCE_MS  = 1000                        // autosave debounce
+
+// ── State ─────────────────────────────────────────────
+let currentUserId  = null
+let saveTimer      = null
+let scanInterval   = null
+let lastRecognized = 0   // timestamp do último match (evita re-fetch desnecessário)
+
+// ── DOM refs ──────────────────────────────────────────
+const video         = document.getElementById('video')
+const canvas        = document.getElementById('canvas')
+const camWrap       = document.getElementById('camWrap')
+const camBadge      = document.getElementById('camBadge')
+const scanLine      = document.getElementById('scanLine')
+const idCard        = document.getElementById('idCard')
+const idAvatar      = document.getElementById('idAvatar')
+const idName        = document.getElementById('idName')
+const idSub         = document.getElementById('idSub')
+const logArea       = document.getElementById('logArea')
+const editor        = document.getElementById('editor')
+const lockedOverlay = document.getElementById('lockedOverlay')
+const docTitle      = document.getElementById('docTitle')
+const charCount     = document.getElementById('charCount')
+const saveStatus    = document.getElementById('saveStatus')
+const saveMsg       = document.getElementById('saveMsg')
+
+// ── Logging ───────────────────────────────────────────
+function log(msg, type = 'info') {
+  const entry = document.createElement('div')
+  entry.className = `log-entry ${type}`
+  const now = new Date()
+  const ts  = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`
+  entry.innerHTML = `<span class="log-time">${ts}</span><span>${msg}</span>`
+  logArea.appendChild(entry)
+  // mantém no máximo 60 entradas
+  while (logArea.children.length > 60) logArea.removeChild(logArea.firstChild)
+  logArea.scrollTop = logArea.scrollHeight
+}
+
+// ── Save status ───────────────────────────────────────
+function setSaveStatus(state, msg) {
+  saveStatus.className = `save-status ${state}`
+  saveMsg.textContent = msg
+}
+
+// ── Webcam setup ──────────────────────────────────────
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+    video.srcObject = stream
+    await new Promise(r => video.onloadedmetadata = r)
+    camBadge.textContent = 'escaneando'
+    camBadge.classList.add('active')
+    camWrap.classList.add('scanning')
+    log('câmera iniciada', 'ok')
+    startScan()
+  } catch (err) {
+    camBadge.textContent = 'sem acesso'
+    log(`câmera: ${err.message}`, 'err')
+  }
+}
+
+// ── Capture frame as Blob ─────────────────────────────
+function captureFrame() {
+  const w = video.videoWidth
+  const h = video.videoHeight
+  if (!w || !h) return null
+  canvas.width = w
+  canvas.height = h
+  canvas.getContext('2d').drawImage(video, 0, 0, w, h)
+  return new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85))
+}
+
+// ── Recognition loop ──────────────────────────────────
+function startScan() {
+  if (scanInterval) clearInterval(scanInterval)
+  scanInterval = setInterval(scanOnce, SCAN_EVERY)
+}
+
+async function scanOnce() {
+  const blob = await captureFrame()
+  if (!blob) return
+
+  const fd = new FormData()
+  fd.append('image', blob, 'frame.jpg')
+
+  try {
+    const res  = await fetch(FACE_URL, { method: 'POST', body: fd })
+    const data = await res.json()
+
+    if (!data.recognized) {
+      // Só loga "não reconhecido" se havia alguém antes (evita spam no log)
+      if (currentUserId) {
+        log('rosto não reconhecido', 'warn')
+        // Não limpa o documento — usuário ainda pode estar digitando
+      }
+      return
+    }
+
+    const userId = data.matches[0].user_id
+    const dist   = data.matches[0].distance
+
+    // Evita re-fetch se é o mesmo usuário e foi reconhecido há menos de 10s
+    const now = Date.now()
+    if (userId === currentUserId && now - lastRecognized < 10_000) {
+      lastRecognized = now
+      return
+    }
+
+    lastRecognized = now
+    log(`match: ${userId} (dist ${dist})`, 'ok')
+    await loadDocument(userId)
+
+  } catch (err) {
+    log(`scan: ${err.message}`, 'err')
+  }
+}
+
+// ── Load document ─────────────────────────────────────
+async function loadDocument(userId) {
+  try {
+    const res  = await fetch(`${DOCS_URL}/${userId}`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const data = await res.json()
+
+    currentUserId = userId
+
+    // Atualiza identidade na sidebar
+    idCard.classList.add('identified')
+    idAvatar.textContent = userId[0].toUpperCase()
+    idName.textContent   = userId
+    idSub.textContent    = `documento carregado`
+    camBadge.textContent = 'identificado'
+    camBadge.className   = 'cam-badge match'
+
+    // Abre editor
+    lockedOverlay.classList.add('hidden')
+    editor.style.display = 'block'
+    editor.value         = data.text ?? ''
+    docTitle.textContent = `${userId}.doc`
+    docTitle.classList.add('loaded')
+    updateCharCount()
+    setSaveStatus('saved', 'documento sincronizado')
+
+    log(`documento de "${userId}" aberto`, 'ok')
+
+  } catch (err) {
+    log(`erro ao carregar doc: ${err.message}`, 'err')
+  }
+}
+
+// ── Autosave ──────────────────────────────────────────
+editor.addEventListener('input', () => {
+  updateCharCount()
+  if (!currentUserId) return
+  setSaveStatus('saving', 'salvando…')
+  clearTimeout(saveTimer)
+  saveTimer = setTimeout(saveDocument, DEBOUNCE_MS)
+})
+
+async function saveDocument() {
+  if (!currentUserId) return
+  try {
+    const res = await fetch(`${DOCS_URL}/${currentUserId}`, {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ text: editor.value }),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    setSaveStatus('saved', 'salvo ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
+  } catch (err) {
+    setSaveStatus('error', 'erro ao salvar')
+    log(`autosave: ${err.message}`, 'err')
+  }
+}
+
+function updateCharCount() {
+  const n = editor.value.length
+  charCount.textContent = n > 0 ? `${n.toLocaleString('pt-BR')} car.` : ''
+}
+
+// ── Boot ──────────────────────────────────────────────
+log('sistema iniciado')
+startCamera()
+</script>
+</body>
+</html>

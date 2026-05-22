@@ -1,0 +1,78 @@
+services:
+
+  # ── Gateway + Frontend estático ───────────────────────
+  nginx:
+    build: ./nginx
+    ports:
+      - "8082:8082"
+    depends_on:
+      - document-service
+      #- face-proxy
+      - face-recognition
+    restart: unless-stopped
+
+  # ── Document service (Node.js) ────────────────────────
+  document-service:
+    build: ./document-service
+    environment:
+      PGHOST:     postgres
+      PGPORT:     5432
+      PGDATABASE: docsdb
+      PGUSER:     postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PORT:       3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+
+   # ── Serviço do Frontend (Node.js) ─────────────────────
+  front:
+    build: ./front
+    environment:
+      PORT: 8081
+    restart: unless-stopped
+
+  # ── Face proxy (Node.js) ──────────────────────────────
+  #face-proxy:
+    #build: ./face-proxy
+    #environment:
+      #FACE_SERVICE_URL: http://face-recognition:5000
+      #PORT: 3003
+    #depends_on:
+      #- face-recognition
+    #restart: unless-stopped
+
+  # ── Face recognition service (Python) ────────────────
+  face-recognition:
+    build: ./reconhecimento_facial
+    environment:
+      REFERENCE_DIR: /data/rostos_conhecidos
+      SAVE_DIR:      /data/rostos_detectados
+      THRESHOLD:     0.8
+      PORT:          5000
+    volumes:
+      - ./data/rostos_conhecidos:/data/rostos_conhecidos:ro
+      - ./data/rostos_detectados:/data/rostos_detectados
+    restart: unless-stopped
+
+  # ── PostgreSQL ────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB:       docsdb
+      POSTGRES_USER:     postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./document-service/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  pgdata:
