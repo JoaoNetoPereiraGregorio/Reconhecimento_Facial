@@ -1,12 +1,12 @@
 import 'dotenv/config'//remover
 import express from 'express'
-import cors from 'cors'//remover
+//import cors from 'cors'//remover
 import { pool } from './db.js'
 import { router as docsRouter } from './routes/docs.js'
 
 const app = express()
 app.use(express.json())
-app.use(cors())// remover
+//app.use(cors())// remover
 
 app.use('/docs', docsRouter)
 

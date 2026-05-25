@@ -10,7 +10,7 @@ import time
 import cv2
 import numpy as np
 from flask import Flask, request, jsonify
-from flask_cors import CORS
+#from flask_cors import CORS
 
 # ---------------------------------------------------------------------------
 # Reutiliza as camadas que você já possui
@@ -49,13 +49,13 @@ reference_images = user_interface.load_reference_images()
 # ---------------------------------------------------------------------------
 app = Flask(__name__)
 
-CORS(app, resources={
-    r"/*": {
-        "origins": ["http://localhost:8081", "http://127.0.0.1:8081"],
-        "methods": ["POST", "GET", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization"]
-    }
-})
+#CORS(app, resources={
+   # r"/*": {
+    #    "origins": ["http://localhost:8081", "http://127.0.0.1:8081"],
+    #    "methods": ["POST", "GET", "OPTIONS"],
+    #    "allow_headers": ["Content-Type", "Authorization"]
+   # }
+#})
 
 # ---------------------------------------------------------------------------
 @app.route("/health", methods=["GET"])
@@ -97,11 +97,11 @@ def recognize():
 
     # Salva o arquivo recebido do /post
     # Comente essa parte p n manter histórico dos uploads.
-    upload_path, upload_filename, renamed = save_upload_file(file)
-    if renamed:
-        broker.log_event(f"[{request.remote_addr}] UPLOAD COM NOME JÁ EXISTENTE, atribuido novo nome: {upload_filename}")
-    broker.log_event(f"[{request.remote_addr}] Upload salvo em: {upload_path}")
-    file.stream.seek(0)  # Retorna o ponteiro do arquivo ao início para leitura em memória
+    #upload_path, upload_filename, renamed = save_upload_file(file)
+    #if renamed:
+        #broker.log_event(f"[{request.remote_addr}] UPLOAD COM NOME JÁ EXISTENTE, atribuido novo nome: {upload_filename}")
+    #broker.log_event(f"[{request.remote_addr}] Upload salvo em: {upload_path}")
+    #file.stream.seek(0)  # Retorna o ponteiro do arquivo ao início para leitura em memória
 
     # Decodifica o arquivo em memória
     file_bytes  = np.frombuffer(file.read(), np.uint8)

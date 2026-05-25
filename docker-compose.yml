@@ -1,17 +1,21 @@
 services:
 
-  # ── Gateway + Frontend estático ───────────────────────
   nginx:
     build: ./nginx
     ports:
       - "8082:8082"
     depends_on:
+      - front
       - document-service
-      #- face-proxy
       - face-recognition
     restart: unless-stopped
 
-  # ── Document service (Node.js) ────────────────────────
+  front:
+    build: ./front
+    environment:
+      PORT: 8081
+    restart: unless-stopped
+
   document-service:
     build: ./document-service
     environment:
@@ -20,31 +24,12 @@ services:
       PGDATABASE: docsdb
       PGUSER:     postgres
       PGPASSWORD: ${POSTGRES_PASSWORD}
-      PORT:       3001
+      PORT:       8083
     depends_on:
       postgres:
         condition: service_healthy
     restart: unless-stopped
 
-
-   # ── Serviço do Frontend (Node.js) ─────────────────────
-  front:
-    build: ./front
-    environment:
-      PORT: 8081
-    restart: unless-stopped
-
-  # ── Face proxy (Node.js) ──────────────────────────────
-  #face-proxy:
-    #build: ./face-proxy
-    #environment:
-      #FACE_SERVICE_URL: http://face-recognition:5000
-      #PORT: 3003
-    #depends_on:
-      #- face-recognition
-    #restart: unless-stopped
-
-  # ── Face recognition service (Python) ────────────────
   face-recognition:
     build: ./reconhecimento_facial
     environment:
@@ -57,7 +42,6 @@ services:
       - ./data/rostos_detectados:/data/rostos_detectados
     restart: unless-stopped
 
-  # ── PostgreSQL ────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
     environment:
