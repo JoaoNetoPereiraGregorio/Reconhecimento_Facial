@@ -140,8 +140,15 @@ def recognize():
                     f"[{request.remote_addr}] POST /recognize - match face {i} -> ref={ref_name} user_id={user_id} dist={distance:.4f}"
                 )
 
+
+
     if recognized:
-        broker.log_event(f"[{request.remote_addr}] POST /recognize - reconhecimento concluído: {len(matches)} match(es) em {len(faces)} rosto(s)")
+        # Ordena os matches pela menor distância e filtra para manter apenas o melhor
+        # key=lambda x: x["distance"] garante a ordenação do menor para o maior
+        best_match = min(matches, key=lambda x: x["distance"])
+        matches = [best_match]  # Substitui a lista mantendo apenas o mais parecido
+
+        broker.log_event(f"[{request.remote_addr}] POST /recognize - reconhecimento concluído: Melhor match para user_id={best_match['user_id']} dist={best_match['distance']}")
     else:
         broker.log_event(f"[{request.remote_addr}] POST /recognize - nenhum rosto conhecido encontrado entre {len(faces)} rosto(s) detectado(s)")
 
