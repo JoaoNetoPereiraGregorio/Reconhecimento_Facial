@@ -7,6 +7,7 @@ import { router as docsRouter } from './routes/docs.js'
 const app = express()
 app.use(express.json())
 //app.use(cors())// remover
+app.set('trust proxy', 'loopback, linklocal, uniquelocal');
 
 app.use('/docs', docsRouter)
 

@@ -440,6 +440,20 @@ const charCount      = document.getElementById('charCount')
 const saveStatus     = document.getElementById('saveStatus')
 const saveMsg        = document.getElementById('saveMsg')
 
+
+let CLIENT_IP = null;
+
+async function getClientIP() {
+  try {
+    CLIENT_IP = await fetch('https://api.ipify.org').then(r => r.text());
+    log(`IP detectado: ${CLIENT_IP}`, 'ok');
+  } catch (err) {
+    log('erro ao obter IP público', 'warn');
+  }
+}
+
+
+
 // ── Logging ───────────────────────────────────────────
 function log(msg, type = 'info') {
   const entry = document.createElement('div')
@@ -608,7 +622,13 @@ function onMissingFrame() {
 // ── Carrega documento ─────────────────────────────────
 async function loadDocument(userId) {
   try {
-    const res  = await fetch(`${DOCS_URL}/${userId}`)
+    
+const res = await fetch(`${DOCS_URL}/${userId}`, {
+  headers: {
+    'X-Client-IP': CLIENT_IP
+  }
+});
+
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json()
 
@@ -640,11 +660,16 @@ editor.addEventListener('input', () => {
 async function saveDocument() {
   if (!currentUserId) return
   try {
-    const res = await fetch(`${DOCS_URL}/${currentUserId}`, {
-      method:  'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ text: editor.value }),
-    })
+   
+const res = await fetch(`${DOCS_URL}/${currentUserId}`, {
+  method:  'PATCH',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-Client-IP': CLIENT_IP
+  },
+  body: JSON.stringify({ text: editor.value }),
+});
+
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     setSaveStatus('saved', 'salvo ' + new Date().toLocaleTimeString('pt-BR'))
   } catch (err) {
@@ -660,6 +685,7 @@ function updateCharCount() {
 
 // ── Boot ──────────────────────────────────────────────
 log('sistema iniciado')
+getClientIP()
 startCamera()
 </script>
 </body>
