@@ -36,7 +36,6 @@
     overflow: hidden;
   }
 
-  /* ── Layout ─────────────────────────────── */
   .shell {
     display: grid;
     grid-template-rows: 48px 1fr;
@@ -44,7 +43,7 @@
     height: 100vh;
   }
 
-  /* ── Topbar ─────────────────────────────── */
+  /* ── Topbar ── */
   .topbar {
     grid-column: 1 / -1;
     display: flex;
@@ -80,22 +79,16 @@
   .save-status.saving { color: var(--amber); }
   .save-status.saved  { color: var(--accent); }
   .save-status.error  { color: var(--red); }
-  .dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: currentColor;
-  }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
-  /* ── Sidebar ─────────────────────────────── */
+  /* ── Sidebar ── */
   .sidebar {
     border-right: 1px solid var(--border);
     background: var(--surface);
     display: flex;
     flex-direction: column;
-    gap: 0;
     overflow: hidden;
   }
-
   .section-label {
     padding: 14px 16px 8px;
     font-size: 10px;
@@ -105,7 +98,7 @@
     color: var(--muted);
   }
 
-  /* Camera box */
+  /* Camera */
   .cam-wrap {
     position: relative;
     margin: 0 16px;
@@ -116,19 +109,16 @@
     border: 1px solid var(--border);
   }
   #video {
-    width: 100%;
-    height: 100%;
+    width: 100%; height: 100%;
     object-fit: cover;
     display: block;
-    transform: scaleX(-1); /* espelho */
+    transform: scaleX(-1);
   }
   #canvas { display: none; }
 
-  /* Scanning overlay */
   .scan-line {
     position: absolute;
-    left: 0; right: 0;
-    height: 2px;
+    left: 0; right: 0; height: 2px;
     background: linear-gradient(90deg, transparent, var(--accent), transparent);
     opacity: 0;
     pointer-events: none;
@@ -138,13 +128,8 @@
     opacity: 1;
     animation: scan 1.6s ease-in-out infinite;
   }
-  @keyframes scan {
-    0%   { top: 0%; }
-    50%  { top: calc(100% - 2px); }
-    100% { top: 0%; }
-  }
+  @keyframes scan { 0%{top:0%} 50%{top:calc(100% - 2px)} 100%{top:0%} }
 
-  /* Corner decorations */
   .cam-corner {
     position: absolute;
     width: 14px; height: 14px;
@@ -153,12 +138,11 @@
     pointer-events: none;
     opacity: .6;
   }
-  .cam-corner.tl { top: 6px;  left: 6px;  border-width: 2px 0 0 2px; }
-  .cam-corner.tr { top: 6px;  right: 6px; border-width: 2px 2px 0 0; }
-  .cam-corner.bl { bottom: 6px; left: 6px;  border-width: 0 0 2px 2px; }
-  .cam-corner.br { bottom: 6px; right: 6px; border-width: 0 2px 2px 0; }
+  .cam-corner.tl { top:6px;    left:6px;  border-width:2px 0 0 2px; }
+  .cam-corner.tr { top:6px;    right:6px; border-width:2px 2px 0 0; }
+  .cam-corner.bl { bottom:6px; left:6px;  border-width:0 0 2px 2px; }
+  .cam-corner.br { bottom:6px; right:6px; border-width:0 2px 2px 0; }
 
-  /* Cam status badge */
   .cam-badge {
     position: absolute;
     bottom: 8px; left: 50%;
@@ -174,8 +158,27 @@
     white-space: nowrap;
     transition: all .3s;
   }
-  .cam-badge.active { color: var(--accent); border-color: var(--accent-dim); }
-  .cam-badge.match  { color: #0c0c0e; background: var(--accent); border-color: var(--accent); }
+  .cam-badge.active  { color: var(--accent); border-color: var(--accent-dim); }
+  .cam-badge.match   { color: #0c0c0e; background: var(--accent); border-color: var(--accent); }
+  .cam-badge.absent  { color: var(--amber); border-color: var(--amber); }
+
+  /* Absent countdown ring */
+  .absent-ring {
+    position: absolute;
+    top: 8px; right: 8px;
+    width: 32px; height: 32px;
+    display: none;
+  }
+  .absent-ring.visible { display: block; }
+  .absent-ring svg { transform: rotate(-90deg); }
+  .absent-ring circle {
+    fill: none;
+    stroke-width: 3;
+    stroke-linecap: round;
+    transition: stroke-dashoffset .4s linear;
+  }
+  .absent-ring .track  { stroke: var(--border-hi); }
+  .absent-ring .prog   { stroke: var(--amber); stroke-dasharray: 88; stroke-dashoffset: 0; }
 
   /* Identity card */
   .id-card {
@@ -191,6 +194,7 @@
     transition: border-color .3s;
   }
   .id-card.identified { border-color: var(--accent-dim); }
+  .id-card.absent     { border-color: var(--amber); }
   .id-avatar {
     width: 32px; height: 32px;
     border-radius: 50%;
@@ -206,27 +210,18 @@
     text-transform: uppercase;
     transition: background .3s, color .3s;
   }
-  .id-card.identified .id-avatar {
-    background: var(--accent);
-    color: var(--bg);
-  }
+  .id-card.identified .id-avatar { background: var(--accent); color: var(--bg); }
+  .id-card.absent     .id-avatar { background: var(--amber);  color: var(--bg); }
   .id-info { flex: 1; overflow: hidden; }
   .id-name {
     font-family: var(--sans);
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 13px; font-weight: 700;
     color: var(--muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     transition: color .3s;
   }
   .id-card.identified .id-name { color: var(--text); }
-  .id-sub {
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: .04em;
-  }
+  .id-sub { font-size: 10px; color: var(--muted); letter-spacing: .04em; }
 
   /* Log */
   .log-area {
@@ -238,64 +233,54 @@
     gap: 4px;
   }
   .log-area::-webkit-scrollbar { width: 4px; }
-  .log-area::-webkit-scrollbar-track { background: transparent; }
   .log-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
   .log-entry {
-    font-size: 11px;
-    color: var(--muted);
-    display: flex;
-    gap: 8px;
+    font-size: 11px; color: var(--muted);
+    display: flex; gap: 8px;
     animation: fadeIn .2s ease;
   }
-  .log-entry.ok    { color: var(--accent); }
-  .log-entry.warn  { color: var(--amber); }
-  .log-entry.err   { color: var(--red); }
+  .log-entry.ok   { color: var(--accent); }
+  .log-entry.warn { color: var(--amber); }
+  .log-entry.err  { color: var(--red); }
   .log-time { flex-shrink: 0; opacity: .5; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } }
 
-  /* ── Editor ─────────────────────────────── */
+  /* ── Editor ── */
   .editor-pane {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    position: relative;
   }
-
   .editor-header {
     padding: 12px 24px;
     border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    display: flex; align-items: center; gap: 10px;
     min-height: 44px;
   }
   .doc-title {
     font-family: var(--sans);
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--muted);
-    flex: 1;
+    font-size: 13px; font-weight: 500;
+    color: var(--muted); flex: 1;
   }
   .doc-title.loaded { color: var(--text); }
-  .char-count {
-    font-size: 11px;
-    color: var(--muted);
-    font-variant-numeric: tabular-nums;
-  }
+  .char-count { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
 
   /* Locked overlay */
   .locked-overlay {
-    flex: 1;
+    position: absolute;
+    inset: 44px 0 0 0;   /* abaixo do editor-header */
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 16px;
+    background: var(--bg);
     opacity: 1;
     transition: opacity .4s;
-    pointer-events: none;
+    z-index: 10;
   }
-  .locked-overlay.hidden { opacity: 0; }
+  .locked-overlay.hidden { opacity: 0; pointer-events: none; }
   .lock-icon {
     font-size: 40px;
     filter: grayscale(1);
@@ -303,43 +288,48 @@
     animation: pulse 3s ease-in-out infinite;
   }
   @keyframes pulse { 0%,100%{opacity:.2} 50%{opacity:.35} }
-  .lock-msg {
-    font-size: 12px;
-    color: var(--muted);
-    text-align: center;
-    letter-spacing: .04em;
+  .lock-msg { font-size: 12px; color: var(--muted); text-align: center; letter-spacing: .04em; }
+
+  /* Absent overlay — aparece sobre o editor quando sessão encerra */
+  .absent-overlay {
+    position: absolute;
+    inset: 44px 0 0 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: rgba(12,12,14,.92);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .6s;
+    z-index: 11;
+    backdrop-filter: blur(4px);
   }
+  .absent-overlay.visible { opacity: 1; pointer-events: all; }
+  .absent-icon { font-size: 36px; opacity: .4; }
+  .absent-msg  { font-size: 12px; color: var(--amber); letter-spacing: .06em; text-transform: uppercase; }
 
   #editor {
     flex: 1;
-    width: 100%;
-    resize: none;
-    border: none;
-    outline: none;
+    resize: none; border: none; outline: none;
     background: transparent;
     color: var(--text);
     font-family: var(--mono);
-    font-size: 15px;
-    line-height: 1.75;
+    font-size: 15px; line-height: 1.75;
     padding: 28px 60px 28px 48px;
     caret-color: var(--accent);
-    display: none; /* shown after recognition */
   }
   #editor::placeholder { color: var(--muted); opacity: .4; }
   #editor::-webkit-scrollbar { width: 6px; }
-  #editor::-webkit-scrollbar-track { background: transparent; }
   #editor::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-  /* Noise grain overlay */
   body::after {
     content: '';
-    position: fixed;
-    inset: 0;
+    position: fixed; inset: 0;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");
     background-size: 200px 200px;
-    pointer-events: none;
-    z-index: 999;
-    opacity: .5;
+    pointer-events: none; z-index: 999; opacity: .5;
   }
 </style>
 </head>
@@ -347,7 +337,6 @@
 
 <div class="shell">
 
-  <!-- ── Topbar ── -->
   <header class="topbar">
     <div class="logo">doc<span>face</span></div>
     <div class="topbar-right">
@@ -358,26 +347,33 @@
     </div>
   </header>
 
-  <!-- ── Sidebar ── -->
   <aside class="sidebar">
     <div class="section-label">câmera</div>
 
     <div class="cam-wrap" id="camWrap">
       <video id="video" autoplay playsinline muted></video>
       <canvas id="canvas"></canvas>
-      <div class="scan-line" id="scanLine"></div>
+      <div class="scan-line"></div>
       <div class="cam-corner tl"></div>
       <div class="cam-corner tr"></div>
       <div class="cam-corner bl"></div>
       <div class="cam-corner br"></div>
       <div class="cam-badge" id="camBadge">iniciando…</div>
+
+      <!-- Anel de contagem regressiva de ausência -->
+      <div class="absent-ring" id="absentRing">
+        <svg viewBox="0 0 32 32" width="32" height="32">
+          <circle class="track" cx="16" cy="16" r="14"/>
+          <circle class="prog"  cx="16" cy="16" r="14" id="absentProg"/>
+        </svg>
+      </div>
     </div>
 
     <div class="id-card" id="idCard">
       <div class="id-avatar" id="idAvatar">?</div>
       <div class="id-info">
         <div class="id-name" id="idName">nenhum usuário</div>
-        <div class="id-sub" id="idSub">aponte para a câmera</div>
+        <div class="id-sub"  id="idSub">aponte para a câmera</div>
       </div>
     </div>
 
@@ -385,16 +381,22 @@
     <div class="log-area" id="logArea"></div>
   </aside>
 
-  <!-- ── Editor ── -->
   <main class="editor-pane">
     <div class="editor-header">
       <div class="doc-title" id="docTitle">— sem documento —</div>
       <div class="char-count" id="charCount"></div>
     </div>
 
+    <!-- Overlay: aguardando reconhecimento inicial -->
     <div class="locked-overlay" id="lockedOverlay">
       <div class="lock-icon">⬡</div>
       <div class="lock-msg">reconhecimento facial necessário<br>para abrir o documento</div>
+    </div>
+
+    <!-- Overlay: sessão encerrada por ausência -->
+    <div class="absent-overlay" id="absentOverlay">
+      <div class="absent-icon">◎</div>
+      <div class="absent-msg">sessão encerrada</div>
     </div>
 
     <textarea id="editor" placeholder="comece a digitar…" spellcheck="false"></textarea>
@@ -404,49 +406,52 @@
 
 <script>
 // ── Config ────────────────────────────────────────────
-const FACE_URL     = '/face/recognize'          // via nginx
-const DOCS_URL     = '/docs' 
-//const FACE_URL     = 'http://192.168.1.208:5000/recognize'          // via nginx
-//const DOCS_URL     = 'http://192.168.1.208:8083/docs'                     // via nginx
-const SCAN_EVERY   = 2000                        // ms
-const DEBOUNCE_MS  = 1000                        // autosave debounce
+const FACE_URL         = '/face/recognize'
+const DOCS_URL         = '/docs'
+const SCAN_EVERY       = 2000          // ms entre cada frame enviado
+const DEBOUNCE_MS      = 1000          // debounce do autosave
+const ABSENT_THRESHOLD = 5             // frames sem rosto para encerrar sessão (5 × 2s = 10s)
 
-// ── State ─────────────────────────────────────────────
+// ── Estado da sessão ──────────────────────────────────
+// Estados possíveis: 'waiting' | 'present' | 'absent'
+let sessionState   = 'waiting'
 let currentUserId  = null
+let missingFrames  = 0       // contador de frames consecutivos sem rosto
 let saveTimer      = null
-let scanInterval   = null
-let lastRecognized = 0   // timestamp do último match (evita re-fetch desnecessário)
+let lastRecognized = 0
 
-// ── DOM refs ──────────────────────────────────────────
-const video         = document.getElementById('video')
-const canvas        = document.getElementById('canvas')
-const camWrap       = document.getElementById('camWrap')
-const camBadge      = document.getElementById('camBadge')
-const scanLine      = document.getElementById('scanLine')
-const idCard        = document.getElementById('idCard')
-const idAvatar      = document.getElementById('idAvatar')
-const idName        = document.getElementById('idName')
-const idSub         = document.getElementById('idSub')
-const logArea       = document.getElementById('logArea')
-const editor        = document.getElementById('editor')
-const lockedOverlay = document.getElementById('lockedOverlay')
-const docTitle      = document.getElementById('docTitle')
-const charCount     = document.getElementById('charCount')
-const saveStatus    = document.getElementById('saveStatus')
-const saveMsg       = document.getElementById('saveMsg')
+// ── DOM ───────────────────────────────────────────────
+const video          = document.getElementById('video')
+const canvas         = document.getElementById('canvas')
+const camWrap        = document.getElementById('camWrap')
+const camBadge       = document.getElementById('camBadge')
+const absentRing     = document.getElementById('absentRing')
+const absentProg     = document.getElementById('absentProg')
+const idCard         = document.getElementById('idCard')
+const idAvatar       = document.getElementById('idAvatar')
+const idName         = document.getElementById('idName')
+const idSub          = document.getElementById('idSub')
+const logArea        = document.getElementById('logArea')
+const editor         = document.getElementById('editor')
+const lockedOverlay  = document.getElementById('lockedOverlay')
+const absentOverlay  = document.getElementById('absentOverlay')
+const docTitle       = document.getElementById('docTitle')
+const charCount      = document.getElementById('charCount')
+const saveStatus     = document.getElementById('saveStatus')
+const saveMsg        = document.getElementById('saveMsg')
 
 // ── Logging ───────────────────────────────────────────
 function log(msg, type = 'info') {
   const entry = document.createElement('div')
   entry.className = `log-entry ${type}`
   const now = new Date()
-  const ts  = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`
+  const ts  = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
   entry.innerHTML = `<span class="log-time">${ts}</span><span>${msg}</span>`
   logArea.appendChild(entry)
-  // mantém no máximo 60 entradas
   while (logArea.children.length > 60) logArea.removeChild(logArea.firstChild)
   logArea.scrollTop = logArea.scrollHeight
 }
+const pad = n => String(n).padStart(2, '0')
 
 // ── Save status ───────────────────────────────────────
 function setSaveStatus(state, msg) {
@@ -454,24 +459,88 @@ function setSaveStatus(state, msg) {
   saveMsg.textContent = msg
 }
 
-// ── Webcam setup ──────────────────────────────────────
+// ── Transições de estado ──────────────────────────────
+function transitionTo(newState) {
+  if (sessionState === newState) return
+  const prev = sessionState
+  sessionState = newState
+  log(`sessão: ${prev} → ${newState}`, newState === 'present' ? 'ok' : newState === 'absent' ? 'warn' : 'info')
+  applyState()
+}
+
+function applyState() {
+  if (sessionState === 'waiting') {
+    // Tela bloqueada, nenhum usuário
+    lockedOverlay.classList.remove('hidden')
+    absentOverlay.classList.remove('visible')
+    camBadge.className = 'cam-badge active'
+    camBadge.textContent = 'escaneando'
+    idCard.className = 'id-card'
+    idAvatar.textContent = '?'
+    idName.textContent = 'nenhum usuário'
+    idSub.textContent = 'aponte para a câmera'
+    absentRing.classList.remove('visible')
+    docTitle.textContent = '— sem documento —'
+    docTitle.classList.remove('loaded')
+    charCount.textContent = ''
+    setSaveStatus('', 'aguardando reconhecimento')
+    currentUserId = null
+    missingFrames = 0
+
+  } else if (sessionState === 'present') {
+    // Editor ativo
+    lockedOverlay.classList.add('hidden')
+    absentOverlay.classList.remove('visible')
+    camBadge.className = 'cam-badge match'
+    camBadge.textContent = 'identificado'
+    idCard.className = 'id-card identified'
+    absentRing.classList.remove('visible')
+    missingFrames = 0
+
+  } else if (sessionState === 'absent') {
+    // Usuário saiu — salva e bloqueia
+    camBadge.className = 'cam-badge absent'
+    camBadge.textContent = 'ausente'
+    idCard.className = 'id-card absent'
+    idSub.textContent = 'sessão encerrada'
+    absentOverlay.classList.add('visible')
+    saveDocument()   // save final antes de bloquear
+    setSaveStatus('saving', 'salvando antes de encerrar…')
+    // Após 2s volta a waiting para aceitar novo usuário
+    setTimeout(() => transitionTo('waiting'), 2000)
+  }
+}
+
+// ── Anel de contagem regressiva ───────────────────────
+function updateAbsentRing() {
+  if (missingFrames === 0) {
+    absentRing.classList.remove('visible')
+    return
+  }
+  absentRing.classList.add('visible')
+  // dashoffset: 88 = circunferência completa (vazio), 0 = cheio
+  const ratio  = missingFrames / ABSENT_THRESHOLD
+  const offset = 88 - (88 * ratio)
+  absentProg.style.strokeDashoffset = offset
+}
+
+// ── Webcam ────────────────────────────────────────────
 async function startCamera() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
     video.srcObject = stream
     await new Promise(r => video.onloadedmetadata = r)
+    camWrap.classList.add('scanning')
     camBadge.textContent = 'escaneando'
     camBadge.classList.add('active')
-    camWrap.classList.add('scanning')
     log('câmera iniciada', 'ok')
-    startScan()
+    setInterval(scanOnce, SCAN_EVERY)
   } catch (err) {
     camBadge.textContent = 'sem acesso'
     log(`câmera: ${err.message}`, 'err')
   }
 }
 
-// ── Capture frame as Blob ─────────────────────────────
 function captureFrame() {
   const w = video.videoWidth
   const h = video.videoHeight
@@ -479,66 +548,64 @@ function captureFrame() {
   canvas.width = w
   canvas.height = h
   canvas.getContext('2d').drawImage(video, 0, 0, w, h)
-  return new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85))
+  return new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.85))
 }
 
-// ── Recognition loop ──────────────────────────────────
-function startScan() {
-  if (scanInterval) clearInterval(scanInterval)
-  scanInterval = setInterval(scanOnce, SCAN_EVERY)
-}
-
-let isProcessingFrame = false; 
-
+// ── Loop de reconhecimento ────────────────────────────
 async function scanOnce() {
-  // Impede que um novo scan rode se o anterior ainda estiver esperando resposta do Flask
-  if (isProcessingFrame) return
-  isProcessingFrame = true
+  const blob = await captureFrame()
+  if (!blob) return
+
+  const fd = new FormData()
+  fd.append('image', blob, 'frame.jpg')
 
   try {
-    const blob = await captureFrame()
-    if (!blob) return
-
-    const fd = new FormData()
-    fd.append('image', blob, 'frame.jpg')
-
     const res  = await fetch(FACE_URL, { method: 'POST', body: fd })
     const data = await res.json()
 
-    // 1. Valida se o rosto foi reconhecido e se a lista de matches não veio vazia
-    if (!data.recognized || !data.matches || data.matches.length === 0) {
-      if (currentUserId) {
-        log('rosto não reconhecido', 'warn')
-      }
+    if (!data.recognized) {
+      onMissingFrame()
       return
     }
 
-    // 2. Coleta os dados do primeiro match da lista [0] retornado pelo seu Flask
     const userId = data.matches[0].user_id
-    const dist   = data.matches[0].distance
-
-    // 3. Evita re-fetch se é o mesmo usuário e foi reconhecido há menos de 10s
-    const now = Date.now()
-    if (userId === currentUserId && now - lastRecognized < 10_000) {
-      lastRecognized = now
-      return
-    }
-
-    lastRecognized = now
-    log(`match: ${userId} (dist ${dist})`, 'ok')
-    
-    // 4. Carrega o documento do banco via document-service (Porta 3001)
-    await loadDocument(userId)
+    onFaceDetected(userId, data.matches[0].distance)
 
   } catch (err) {
     log(`scan: ${err.message}`, 'err')
-  } finally {
-    // Libera a função para processar o próximo frame da câmera
-    isProcessingFrame = false 
   }
 }
 
-// ── Load document ─────────────────────────────────────
+// ── Rosto detectado ───────────────────────────────────
+async function onFaceDetected(userId, distance) {
+  missingFrames = 0
+  updateAbsentRing()
+  lastRecognized = Date.now()
+
+  if (sessionState === 'present' && userId === currentUserId) {
+    // Mesmo usuário, sessão ativa — apenas renova
+    return
+  }
+
+  // Novo usuário ou retorno de ausência
+  log(`match: ${userId} (dist ${distance})`, 'ok')
+  await loadDocument(userId)
+  transitionTo('present')
+}
+
+// ── Frame sem rosto ───────────────────────────────────
+function onMissingFrame() {
+  if (sessionState !== 'present') return   // só conta se há sessão ativa
+  missingFrames++
+  updateAbsentRing()
+
+  if (missingFrames >= ABSENT_THRESHOLD) {
+    log(`ausente por ${ABSENT_THRESHOLD * (SCAN_EVERY / 1000)}s — encerrando sessão`, 'warn')
+    transitionTo('absent')
+  }
+}
+
+// ── Carrega documento ─────────────────────────────────
 async function loadDocument(userId) {
   try {
     const res  = await fetch(`${DOCS_URL}/${userId}`)
@@ -546,24 +613,14 @@ async function loadDocument(userId) {
     const data = await res.json()
 
     currentUserId = userId
-
-    // Atualiza identidade na sidebar
-    idCard.classList.add('identified')
     idAvatar.textContent = userId[0].toUpperCase()
     idName.textContent   = userId
-    idSub.textContent    = `documento carregado`
-    camBadge.textContent = 'identificado'
-    camBadge.className   = 'cam-badge match'
-
-    // Abre editor
-    lockedOverlay.classList.add('hidden')
-    editor.style.display = 'block'
+    idSub.textContent    = 'documento carregado'
     editor.value         = data.text ?? ''
     docTitle.textContent = `${userId}.doc`
     docTitle.classList.add('loaded')
     updateCharCount()
     setSaveStatus('saved', 'documento sincronizado')
-
     log(`documento de "${userId}" aberto`, 'ok')
 
   } catch (err) {
@@ -589,7 +646,7 @@ async function saveDocument() {
       body:    JSON.stringify({ text: editor.value }),
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    setSaveStatus('saved', 'salvo ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
+    setSaveStatus('saved', 'salvo ' + new Date().toLocaleTimeString('pt-BR'))
   } catch (err) {
     setSaveStatus('error', 'erro ao salvar')
     log(`autosave: ${err.message}`, 'err')
